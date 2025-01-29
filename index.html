@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카운터 애니메이션</title>
+    <title>메인 페이지</title>
     <style>
         body {
             display: flex;
@@ -13,57 +13,14 @@
             height: 100vh;
             font-family: Arial, sans-serif;
         }
-        .counter {
-            font-size: 3rem;
-            font-weight: bold;
-            position: relative;
-        }
-        .increment {
-            position: absolute;
-            font-size: 2rem;
-            color: red;
-            opacity: 1;
-            transform: translateY(0);
-            animation: riseUp 1s ease-out forwards;
-        }
-        @keyframes riseUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-        }
         button {
-            margin-top: 20px;
-            padding: 10px 20px;
+            padding: 15px 30px;
             font-size: 1.5rem;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="counter">0</div>
-    <button onclick="incrementCounter()">+1 증가</button>
-
-    <script>
-        let count = 0;
-        function incrementCounter() {
-            count++;
-            const counterElement = document.querySelector(".counter");
-            counterElement.textContent = count;
-            
-            const incrementElement = document.createElement("span");
-            incrementElement.textContent = "+1";
-            incrementElement.classList.add("increment");
-            counterElement.appendChild(incrementElement);
-            
-            setTimeout(() => {
-                incrementElement.remove();
-            }, 1000);
-        }
-    </script>
+    <button onclick="location.href='counter.html'">버튼 클릭</button>
 </body>
 </html>
