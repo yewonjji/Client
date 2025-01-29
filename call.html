@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹 가짜 전화</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: black;
+            color: white;
+            margin: 0;
+        }
+
+        /* 전화 수신 UI */
+        .call-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-ui {
+            text-align: center;
+        }
+
+        .caller-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 50%;
+            border: none;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+
+        .btn-accept {
+            background-color: green;
+            color: white;
+        }
+
+        .btn-decline {
+            background-color: red;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 전화 UI -->
+    <div class="call-screen" id="callScreen">
+        <div class="phone-ui" id="phoneUI">
+            <div class="caller-name" id="callerName">📞 알 수 없는 번호</div>
+            <div>전화가 오고 있습니다...</div>
+            <div class="button-container">
+                <button class="btn btn-decline" onclick="declineCall()">거절</button>
+                <button class="btn btn-accept" onclick="acceptCall()">응답</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARS 음성 -->
+    <audio id="arsAudio">
+        <source src="ars.mp3" type="audio/mp3">
+        브라우저가 오디오 태그를 지원하지 않습니다.
+    </audio>
+
+    <script>
+        // 사용자의 OS 감지
+        function detectOS() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            if (/android/i.test(userAgent)) {
+                return "android";
+            } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                return "ios";
+            } else {
+                return "unknown";
+            }
+        }
+
+        // 랜덤 전화번호 생성
+        function generateRandomPhoneNumber() {
+            return "+82 " + (Math.floor(Math.random() * 900000000) + 100000000);
+        }
+
+        // 전화 UI 표시
+        function showIncomingCall() {
+            document.getElementById("callerName").innerText = generateRandomPhoneNumber(); // 가짜 번호 설정
+            document.getElementById("callScreen").style.display = "flex";
+            
+            // 모바일에서 진동 효과 추가
+            if (navigator.vibrate) {
+                navigator.vibrate([300, 100, 300, 100, 300]); // 3번 진동
+            }
+
+            // 웹 알림 (전화 알림 효과)
+            if (Notification.permission === "granted") {
+                new Notification("📞 전화가 왔습니다", { body: "알 수 없는 번호에서 전화가 왔습니다." });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("📞 전화가 왔습니다", { body: "알 수 없는 번호에서 전화가 왔습니다." });
+                    }
+                });
+            }
+        }
+
+        // 전화 받기
+        function acceptCall() {
+            document.getElementById("callScreen").style.display = "none";
+            document.getElementById("arsAudio").play(); // ARS 음성 재생
+        }
+
+        // 전화 거절
+        function declineCall() {
+            document.getElementById("callScreen").style.display = "none";
+        }
+
+        // 페이지 로드 후 3초 뒤 전화 UI 표시
+        setTimeout(showIncomingCall, 3000);
+    </script>
+
+</body>
+</html>
