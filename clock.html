@@ -1,30 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clock Control</title>
+    <title>Clock Control (Mobile)</title>
     <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
         .clock {
             position: relative;
-            width: 200px;
-            height: 200px;
+            width: 250px;
+            height: 250px;
             border: 10px solid black;
             border-radius: 50%;
-            margin: 50px auto;
+            background: white;
         }
         .hand {
             position: absolute;
             width: 50%;
-            height: 4px;
+            height: 6px;
             background: red;
             top: 50%;
             transform-origin: 100%;
             transform: rotate(90deg);
-            cursor: pointer;
+            cursor: grab;
         }
         .hour {
-            height: 6px;
+            height: 8px;
             background: blue;
         }
     </style>
@@ -38,62 +46,69 @@
     <script>
         const socket = new WebSocket("ws://localhost:3000");
 
-        socket.addEventListener('open', (event) => {
-            console.log('Connected to WebSocket server');
+        socket.addEventListener("open", () => {
+            console.log("Connected to WebSocket server");
         });
 
-        socket.addEventListener('message', (event) => {
-            console.log('Message from server: ', event.data);
+        socket.addEventListener("message", (event) => {
+            console.log("Message from server:", event.data);
         });
 
-        const minuteHand = document.querySelector('.minute');
-        const hourHand = document.querySelector('.hour');
+        const minuteHand = document.querySelector(".minute");
+        const hourHand = document.querySelector(".hour");
 
         let isDraggingMinute = false;
         let isDraggingHour = false;
 
-        const getRotation = (e, element) => {
+        const getRotation = (touchEvent, element) => {
             const rect = element.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            const radians = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+            const touch = touchEvent.touches[0];
+            const radians = Math.atan2(touch.clientY - centerY, touch.clientX - centerX);
             return radians * (180 / Math.PI) + 90;
         };
 
-        const sendRotationToServer = (hourRotation, minuteRotation) => {
+        const sendRotationToServer = () => {
             const data = {
                 type: "update",
-                clientId: "web",
-                hourRotation: hourRotation,
-                minuteRotation: minuteRotation
+                clientId: "mobile",
+                hourRotation: parseFloat(hourHand.dataset.angle) || 0,
+                minuteRotation: parseFloat(minuteHand.dataset.angle) || 0
             };
             socket.send(JSON.stringify(data));
         };
 
-        document.addEventListener('mousemove', (e) => {
+        const handleTouchMove = (event, handType) => {
+            event.preventDefault();
+            let hand = handType === "minute" ? minuteHand : hourHand;
+            let rotation = getRotation(event, hand);
+            hand.style.transform = `rotate(${rotation}deg)`;
+            hand.dataset.angle = rotation;  // 저장
+            sendRotationToServer();
+        };
+
+        document.addEventListener("touchmove", (e) => {
             if (isDraggingMinute) {
-                const rotation = getRotation(e, minuteHand);
-                minuteHand.style.transform = `rotate(${rotation}deg)`;
-                sendRotationToServer(hourHand.style.transform, rotation);
+                handleTouchMove(e, "minute");
             } else if (isDraggingHour) {
-                const rotation = getRotation(e, hourHand);
-                hourHand.style.transform = `rotate(${rotation}deg)`;
-                sendRotationToServer(rotation, minuteHand.style.transform);
+                handleTouchMove(e, "hour");
             }
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener("touchend", () => {
             isDraggingMinute = false;
             isDraggingHour = false;
         });
 
-        minuteHand.addEventListener('mousedown', () => {
+        minuteHand.addEventListener("touchstart", () => {
             isDraggingMinute = true;
         });
 
-        hourHand.addEventListener('mousedown', () => {
+        hourHand.addEventListener("touchstart", () => {
             isDraggingHour = true;
         });
+
     </script>
 </body>
 </html>
