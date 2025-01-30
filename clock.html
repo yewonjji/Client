@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock Control</title>
+    <style>
+        .clock {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border: 10px solid black;
+            border-radius: 50%;
+            margin: 50px auto;
+        }
+        .hand {
+            position: absolute;
+            width: 50%;
+            height: 4px;
+            background: red;
+            top: 50%;
+            transform-origin: 100%;
+            transform: rotate(90deg);
+            cursor: pointer;
+        }
+        .hour {
+            height: 6px;
+            background: blue;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock">
+        <div class="hand minute"></div>
+        <div class="hand hour"></div>
+    </div>
+
+    <script>
+        const socket = new WebSocket("ws://localhost:3000");
+
+        socket.addEventListener('open', (event) => {
+            console.log('Connected to WebSocket server');
+        });
+
+        socket.addEventListener('message', (event) => {
+            console.log('Message from server: ', event.data);
+        });
+
+        const minuteHand = document.querySelector('.minute');
+        const hourHand = document.querySelector('.hour');
+
+        let isDraggingMinute = false;
+        let isDraggingHour = false;
+
+        const getRotation = (e, element) => {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const radians = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+            return radians * (180 / Math.PI) + 90;
+        };
+
+        const sendRotationToServer = (hourRotation, minuteRotation) => {
+            const data = {
+                type: "update",
+                clientId: "web",
+                hourRotation: hourRotation,
+                minuteRotation: minuteRotation
+            };
+            socket.send(JSON.stringify(data));
+        };
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingMinute) {
+                const rotation = getRotation(e, minuteHand);
+                minuteHand.style.transform = `rotate(${rotation}deg)`;
+                sendRotationToServer(hourHand.style.transform, rotation);
+            } else if (isDraggingHour) {
+                const rotation = getRotation(e, hourHand);
+                hourHand.style.transform = `rotate(${rotation}deg)`;
+                sendRotationToServer(rotation, minuteHand.style.transform);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingMinute = false;
+            isDraggingHour = false;
+        });
+
+        minuteHand.addEventListener('mousedown', () => {
+            isDraggingMinute = true;
+        });
+
+        hourHand.addEventListener('mousedown', () => {
+            isDraggingHour = true;
+        });
+    </script>
+</body>
+</html>
