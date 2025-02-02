@@ -32,24 +32,49 @@
             transform-origin: bottom center;
             transition: transform 0.1s linear;
         }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>핸드폰을 기울여 보세요!</h1>
+    <button id="enableSensor">센서 활성화</button>
     <div class="container">
         <div class="water" id="water"></div>
     </div>
 
     <script>
-        window.addEventListener("deviceorientation", (event) => {
-            let gamma = event.gamma; // 좌우 기울기 (-90 ~ 90)
-            
-            // 기울기 값 제한 (-30 ~ 30)
-            gamma = Math.max(-30, Math.min(30, gamma));
+        document.getElementById("enableSensor").addEventListener("click", async () => {
+            if (typeof DeviceOrientationEvent.requestPermission === "function") {
+                // iOS의 경우 센서 접근 권한 요청
+                const permission = await DeviceOrientationEvent.requestPermission();
+                if (permission !== "granted") {
+                    alert("센서 접근 권한이 필요합니다.");
+                    return;
+                }
+            }
 
-            // 기울기 값으로 물 회전 (반대로 적용)
-            const waterElement = document.getElementById("water");
-            waterElement.style.transform = `rotate(${gamma * -1}deg)`;
+            // 센서 이벤트 등록
+            window.addEventListener("deviceorientation", (event) => {
+                let gamma = event.gamma; // 좌우 기울기 (-90 ~ 90)
+                if (gamma === null) {
+                    alert("센서 데이터를 가져올 수 없습니다.");
+                    return;
+                }
+
+                // 기울기 값 제한 (-30 ~ 30)
+                gamma = Math.max(-30, Math.min(30, gamma));
+
+                // 기울기 값으로 물 회전 (반대로 적용)
+                const waterElement = document.getElementById("water");
+                waterElement.style.transform = `rotate(${gamma * -1}deg)`;
+            });
+
+            alert("센서가 활성화되었습니다. 핸드폰을 기울여 보세요!");
         });
     </script>
 </body>
