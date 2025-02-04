@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카운터 애니메이션</title>
+    <title>카운터 + WebSocket</title>
     <style>
         body {
             display: flex;
@@ -46,24 +46,69 @@
 </head>
 <body>
     <div class="counter">0</div>
-    <button onclick="incrementCounter()">+1 증가</button>
+    <button id="incrementButton">Spawn</button>
+    <p>Status: <span id="status">Disconnected</span></p>
+    <ul id="log"></ul>
 
     <script>
         let count = 0;
-        function incrementCounter() {
+        const socket = new WebSocket("ws://192.168.219.123:3000");
+        const statusElement = document.getElementById("status");
+        const logElement = document.getElementById("log");
+
+        // WebSocket 연결 처리
+        socket.onopen = () => {
+            console.log("Connected to WebSocket server");
+            statusElement.textContent = "Connected";
+        };
+
+        socket.onmessage = (event) => {
+            console.log("Message from server:", event.data);
+            logMessage(`Received: ${event.data}`);
+        };
+
+        socket.onclose = () => {
+            console.log("Disconnected from WebSocket server");
+            statusElement.textContent = "Disconnected";
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            logMessage(`Error: ${error.message}`);
+        };
+
+        function logMessage(message) {
+            const li = document.createElement("li");
+            li.textContent = message;
+            logElement.appendChild(li);
+        }
+
+        // 버튼 클릭 이벤트 처리
+        document.getElementById("incrementButton").addEventListener("click", () => {
             count++;
             const counterElement = document.querySelector(".counter");
             counterElement.textContent = count;
-            
+
+            // +1 애니메이션 추가
             const incrementElement = document.createElement("span");
             incrementElement.textContent = "+1";
             incrementElement.classList.add("increment");
             counterElement.appendChild(incrementElement);
-            
+
             setTimeout(() => {
                 incrementElement.remove();
             }, 1000);
-        }
+
+            // WebSocket으로 데이터 전송
+            const data = {
+                type: "update",
+                clientId: "webClient1",
+                interaction: "counter",
+                value: true, // 버튼 클릭 시 value를 true로 설정
+            };
+            socket.send(JSON.stringify(data));
+            // logMessage(`Sent: ${JSON.stringify(data)}`);
+        });
     </script>
 </body>
 </html>
