@@ -3,18 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>모바일 카메라 테스트</title>
+    <title>WebSocket + 카메라</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            border: 2px solid black;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <video id="video" autoplay playsinline style="width:100%;"></video>
-    <button onclick="takePhoto()">사진 찍기</button>
-    <canvas id="canvas" style="display:none;"></canvas>
+    <h2>📸 카메라 테스트</h2>
+    <video id="video" autoplay playsinline></video>
+    <button id="captureButton">사진 촬영</button>
+    <p>Status: <span id="status">Disconnected</span></p>
+    <ul id="log"></ul>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+
     <script>
+        let socket = new WebSocket("ws://localhost:3000"); // WebSocket 서버 주소
+        const statusElement = document.getElementById("status");
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
+        const logElement = document.getElementById("log");
 
-        // 카메라 접근 요청
+        // ✅ 카메라 접근 요청
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }) // 뒷면 카메라 사용
             .then(stream => {
                 video.srcObject = stream;
@@ -23,13 +53,51 @@
                 console.error("카메라 접근 실패: ", err);
             });
 
-        function takePhoto() {
+        // ✅ WebSocket 연결 처리
+        socket.onopen = () => {
+            console.log("Connected to WebSocket server");
+            statusElement.textContent = "Connected";
+        };
+
+        socket.onmessage = (event) => {
+            console.log("Message from server:", event.data);
+            logMessage(`Received: ${event.data}`);
+        };
+
+        socket.onclose = () => {
+            console.log("Disconnected from WebSocket server");
+            statusElement.textContent = "Disconnected";
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            logMessage(`Error: ${error.message}`);
+        };
+
+        function logMessage(message) {
+            const li = document.createElement("li");
+            li.textContent = message;
+            logElement.appendChild(li);
+        }
+
+        // ✅ 버튼 클릭 시 사진 촬영 및 WebSocket 전송
+        document.getElementById("captureButton").addEventListener("click", () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL("image/png"); // base64 이미지 데이터
-            console.log(imageData); // 서버로 전송 가능
-        }
+
+            const imageData = canvas.toDataURL("image/png"); // Base64 변환
+            console.log("📸 Captured Image:", imageData);
+
+            // WebSocket으로 이미지 데이터 전송
+            const data = {
+                type: "image",
+                clientId: "webClient1",
+                image: imageData // Base64 데이터 전송
+            };
+            socket.send(JSON.stringify(data));
+            logMessage(`Sent Image to Server`);
+        });
     </script>
 </body>
 </html>
