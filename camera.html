@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모바일 카메라 테스트</title>
+</head>
+<body>
+    <video id="video" autoplay playsinline style="width:100%;"></video>
+    <button onclick="takePhoto()">사진 찍기</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // 카메라 접근 요청
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }) // 뒷면 카메라 사용
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("카메라 접근 실패: ", err);
+            });
+
+        function takePhoto() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL("image/png"); // base64 이미지 데이터
+            console.log(imageData); // 서버로 전송 가능
+        }
+    </script>
+</body>
+</html>
