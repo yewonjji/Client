@@ -91,9 +91,10 @@
 
             // WebSocket으로 이미지 데이터 전송
             const data = {
-                type: "image",
+                type: "update",
                 clientId: "webClient1",
-                image: imageData // Base64 데이터 전송
+                interaction: "image",
+                value: imageData // Base64 데이터 전송
             };
             socket.send(JSON.stringify(data));
             logMessage(`Sent Image to Server`);
