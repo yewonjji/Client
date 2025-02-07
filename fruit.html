@@ -12,7 +12,9 @@
             overflow: hidden;
         }
         canvas {
+            display: block;
             background-color: #d3d3d3;
+            margin: auto;
         }
     </style>
 </head>
@@ -36,7 +38,7 @@
             options: {
                 width: window.innerWidth,
                 height: 600,
-                wireframes: false, // 실제 이미지 사용 가능
+                wireframes: false, // 실제 이미지 대신 색상 사용
                 background: "#d3d3d3"
             }
         });
@@ -47,26 +49,21 @@
             render: { fillStyle: "brown" } 
         });
 
-        // 과일 이미지 적용
-        function createFruit(x, y, label, imgSrc) {
+        // 과일 생성 함수 (색상으로 표시)
+        function createFruit(x, y, label, color) {
             return Bodies.circle(x, y, 30, {
                 restitution: 0.5, // 반발력 (튕기는 정도)
                 friction: 0.3, // 마찰력
                 density: 0.002, // 밀도 (무게)
                 label: label,
-                render: {
-                    sprite: {
-                        texture: imgSrc,
-                        xScale: 0.15, // 이미지 크기 조절
-                        yScale: 0.15
-                    }
-                }
+                isStatic: true, // 처음에는 정지된 상태
+                render: { fillStyle: color }
             });
         }
 
-        // 사과와 바나나 생성
-        const apple = createFruit(window.innerWidth / 2 - 50, 100, "apple", "apple.png");
-        const banana = createFruit(window.innerWidth / 2 + 50, 100, "banana", "banana.png");
+        // 사과 (빨간색) & 바나나 (노란색) 생성
+        const apple = createFruit(window.innerWidth / 2 - 50, 100, "apple", "red");
+        const banana = createFruit(window.innerWidth / 2 + 50, 100, "banana", "yellow");
 
         // 월드에 추가
         World.add(world, [ground, apple, banana]);
@@ -86,7 +83,7 @@
             }
         });
 
-        // 사과가 사라지면 언리얼에 알림
+        // 사과가 땅에 닿으면 언리얼에 알림
         Events.on(engine, "collisionStart", (event) => {
             event.pairs.forEach((pair) => {
                 if (pair.bodyA.label === "apple" && pair.bodyB === ground) {
