@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>과일 떨어뜨리기</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .basket {
+            position: relative;
+            display: inline-block;
+            width: 200px;
+            height: 150px;
+            background-color: brown;
+            border-radius: 15px;
+            margin-top: 50px;
+        }
+        .fruit {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            transition: transform 1s ease-in, opacity 0.5s ease-out;
+        }
+        .apple {
+            top: 20px;
+            left: 50px;
+        }
+        .banana {
+            top: 20px;
+            left: 120px;
+        }
+        .fall {
+            transform: translateY(500px);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>핸드폰을 거꾸로 들면 과일이 떨어집니다!</h2>
+    <div class="basket">
+        <img src="apple.png" class="fruit apple" alt="사과">
+        <img src="banana.png" class="fruit banana" alt="바나나">
+    </div>
+
+    <script>
+        window.addEventListener("deviceorientation", (event) => {
+            let beta = event.beta; // 기울기 감지 (-180 ~ 180)
+
+            if (beta < -160) { // 핸드폰을 거꾸로 들었을 때
+                dropFruits(); // 과일 떨어뜨리기
+            }
+        });
+
+        function dropFruits() {
+            document.querySelectorAll(".fruit").forEach(fruit => {
+                fruit.classList.add("fall");
+
+                setTimeout(() => {
+                    if (fruit.classList.contains("apple")) {
+                        notifyUnreal("apple_removed"); // 사과가 사라짐을 알림
+                    }
+                    fruit.remove();
+                }, 1000);
+            });
+        }
+
+        function notifyUnreal(eventType) {
+            fetch("http://localhost:3000/notify", {
+                method: "POST",
+                body: JSON.stringify({ event: eventType }),
+                headers: { "Content-Type": "application/json" }
+            });
+        }
+    </script>
+</body>
+</html>
