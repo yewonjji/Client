@@ -16,10 +16,17 @@
             background-color: #d3d3d3;
             margin: auto;
         }
+        button {
+            margin: 20px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h2>핸드폰을 거꾸로 들면 과일이 떨어지고 부딪힙니다!</h2>
+    <button onclick="requestPermission()">자이로 센서 활성화</button>
     <canvas id="world"></canvas>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
@@ -38,7 +45,7 @@
             options: {
                 width: window.innerWidth,
                 height: 600,
-                wireframes: false, // 실제 이미지 대신 색상 사용
+                wireframes: false,
                 background: "#d3d3d3"
             }
         });
@@ -52,11 +59,11 @@
         // 과일 생성 함수 (색상으로 표시)
         function createFruit(x, y, label, color) {
             return Bodies.circle(x, y, 30, {
-                restitution: 0.5, // 반발력 (튕기는 정도)
-                friction: 0.3, // 마찰력
-                density: 0.002, // 밀도 (무게)
+                restitution: 0.5,
+                friction: 0.3,
+                density: 0.002,
                 label: label,
-                isStatic: true, // 처음에는 정지된 상태
+                isStatic: true,
                 render: { fillStyle: color }
             });
         }
@@ -73,17 +80,36 @@
         const runner = Runner.create();
         Runner.run(runner, engine);
 
-        // 핸드폰 기울기 감지
-        window.addEventListener("deviceorientation", (event) => {
-            let beta = event.beta; // 핸드폰의 앞뒤 기울기 (-180 ~ 180)
-
-            if (beta < -160) { // 핸드폰이 거꾸로 뒤집히면
-                Matter.Body.setStatic(apple, false); // 사과 떨어짐
-                Matter.Body.setStatic(banana, false); // 바나나 떨어짐
+        // ✅ 사용자 액션을 통한 자이로 센서 권한 요청
+        function requestPermission() {
+            if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === "granted") {
+                            activateGyro();
+                        } else {
+                            alert("자이로 센서 권한이 필요합니다!");
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                activateGyro(); // 안드로이드 또는 권한 요청이 필요 없는 브라우저
             }
-        });
+        }
 
-        // 사과가 땅에 닿으면 언리얼에 알림
+        // ✅ 핸드폰 기울기 감지 (자이로센서 활성화)
+        function activateGyro() {
+            window.addEventListener("deviceorientation", (event) => {
+                let beta = event.beta; // 핸드폰의 앞뒤 기울기 (-180 ~ 180)
+
+                if (beta < -160) { // 핸드폰이 거꾸로 뒤집히면
+                    Matter.Body.setStatic(apple, false); // 사과 떨어짐
+                    Matter.Body.setStatic(banana, false); // 바나나 떨어짐
+                }
+            });
+        }
+
+        // ✅ 사과가 땅에 닿으면 언리얼에 알림
         Events.on(engine, "collisionStart", (event) => {
             event.pairs.forEach((pair) => {
                 if (pair.bodyA.label === "apple" && pair.bodyB === ground) {
